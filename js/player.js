@@ -1,5 +1,5 @@
 class Player extends Entity {
-    constructor(x, y, width, height, color, gravity) {
+    constructor(x, y, width, height, color, gravity, jump_height) {
         super(x, y, width, height, color, gravity);
         this.vx = 0;
         this.vy = 0;
@@ -11,6 +11,7 @@ class Player extends Entity {
         this.pressingUp = false;
         this.pressingDown = false;
         this.onGround = false;
+        this.jump_height = 8
     }
 
     update = function() {

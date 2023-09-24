@@ -1,36 +1,36 @@
 //All these are global variables, probably better to not do this
 
-const StartGame = function(ctx, WIDTH, HEIGHT, platforms, player) {
+const StartGame = function(ctx, WIDTH, HEIGHT, platforms, player, FRAME_RATE, y_level) {
     Game = {};
     Game.ctx = ctx;
     Game.WIDTH = WIDTH;
     Game.HEIGHT = HEIGHT;
     Game.platforms = platforms;
     Game.player = player;
+    Game.FRAME_RATE = FRAME_RATE;
+    Game.y_level = y_level;
+
     Game.updateEverything = function() {
         //reset the screen
         let tempColor = ctx.fillStyle;
         ctx.fillStyle = "cyan";
         ctx.fillRect(0, 0, WIDTH, HEIGHT);
         ctx.fillStyle = tempColor;
-        //update and draw the player, anad draw each platform
-        platforms.forEach(Game.drawEntity);
+        Game.y_level = Game.player.y - 300;
+        //update and draw the player, and draw each platform
+        for (var i = 0; i < Game.platforms.length; i += 1) {
+            Game.drawEntity(platforms[i], Game.y_level);
+        }
         Game.updatePlayer(player);
-        Game.drawEntity(player);
+        Game.drawEntity(player, Game.y_level);
     }
 
     Game.updatePlayer = function() {
-        let p = player
-        //updating the player's ability to jump
-        
-        //p.vx = 0;
-        //p.vy = 0;
+        let p = player;
         p.ax = 0;
-        if (p.pressingDown) /*p.vy = 10*/; //maybe charge some attack or smth
+        //if (p.pressingDown); //maybe charge some attack or smth
         
         p.vy += p.gravity;
-    
-        //is position valid? Collision detection should be its own function
 
         if (p.x + p.vx > WIDTH - p.width) {
             p.x = WIDTH - p.width;
@@ -41,14 +41,9 @@ const StartGame = function(ctx, WIDTH, HEIGHT, platforms, player) {
             p.vx = 0;
         }
 
-        //if (p.y + p.vy > topOfGround) {p.y = topOfGround; p.vy = 0}
-        //Checking if the player is on the ground, and stopping its movement, 
+        //Checking if the player is on the ground, and stopping its movement,
         if (p.y + p.vy > HEIGHT - p.height) {
             p.y = HEIGHT - p.height;
-            p.vy = 0;
-        }
-        if (p.y + p.vy < 0) {
-            p.y = 0;
             p.vy = 0;
         }
 
@@ -73,7 +68,7 @@ const StartGame = function(ctx, WIDTH, HEIGHT, platforms, player) {
             p.onGround = true;
             p.y = HEIGHT - p.height;
             if (p.pressingUp) {
-                p.vy = -8;
+                p.vy = -p.jump_height;
                 console.log("JUMP");
             }
             else {
@@ -84,15 +79,17 @@ const StartGame = function(ctx, WIDTH, HEIGHT, platforms, player) {
         for (key in platforms) {
             if (p.collisionType(platforms[key]) == "bottom") {
                 p.onGround = true;
-                p.y = platforms[key].y - p.height;
+                if (p.vy > 0) { 
+                    p.y = platforms[key].y - p.height; 
+                }
                 if (platforms[key].type == "bouncy") {
                     console.log("BOING")
-                    p.vy = -12;
+                    p.vy = -p.jump_height * 3/2;
                 } else if (platforms[key].type == "sticky" && p.pressingUp) {
-                    p.vy = -4;
-                    console.log("jump");
+                    p.vy = -p.jump_height / 3 * 2;
+                    console.log("smol jump");
                 } else if (p.pressingUp) {
-                    p.vy = -8;
+                    p.vy = -p.jump_height;
                     console.log("JUMP");
                 } else {
                     p.vy = Math.min(0, p.vy);
@@ -116,12 +113,37 @@ const StartGame = function(ctx, WIDTH, HEIGHT, platforms, player) {
         }
     }
 
-    Game.drawEntity = function(e) {
+    Game.drawEntity = function(e, y_level) {
         let tempColor = ctx.fillStyle;
         ctx.fillStyle = "black";
         ctx.fillStyle = e.color;
-        ctx.fillRect(e.x, e.y, e.width, e.height);
+        ctx.fillRect(e.x, e.y - y_level, e.width, e.height);
         ctx.fillStyle = tempColor;
+    }
+
+    Game.populatePlatforms = function() {
+        const platform_options = [["green", "normal"], ["blue", "bouncy"], ["purple", "sticky"], ["gray", "hard"]];
+        for (let y_offset = 0; y_offset < HEIGHT * 10; y_offset += HEIGHT) {
+            //slowly gets harder and harder
+            vertical_density = Math.round(12 * Math.exp(-y_offset / (HEIGHT * 5))); 
+            horizontal_density = Math.round(6 * Math.exp(-y_offset / (HEIGHT * 5)));
+            vertical_interval = HEIGHT / vertical_density;
+            horizontal_interval = WIDTH / horizontal_density;
+            for (let x = 0; x < WIDTH; x += horizontal_interval) {
+                for (let y = 0; y < HEIGHT; y += vertical_interval) {
+                    let i = Math.floor(Math.random() * 4)
+                    color = platform_options[i][0];
+                    type = platform_options[i][1];
+                    Game.createAndAddRandomPlatform(x, y - y_offset, horizontal_interval, vertical_interval, 50, 5, color, type);
+                }
+            }
+        }
+    }
+
+    Game.createAndAddRandomPlatform = function (startX, startY, x_interval, y_interval, width, height, color, type) {
+        x = Math.random() * x_interval + startX;
+        y = Math.random() * y_interval + startY;
+        Game.platforms.push(new Platform(x, y, width, height, color, type));
     }
 
     return Game;
@@ -131,28 +153,34 @@ window.onload = function() {
     const canvas = document.getElementById("canvas");
     const ctx = canvas.getContext("2d");
     var platforms = []
-    const game_width = 800
-    const game_height = 600
-    var player = new Player(game_width/2, game_height/2, 20, 20, "blue", 0.5);
-    var Game = StartGame(ctx, game_width, game_height, platforms, player)
+    const GAME_WIDTH = 800
+    const GAME_HEIGHT = 600
+    //let's say the goal of the game is to get to 6000 height, so 10 screens worth of stuff
+    //after each screen (600 pixels), the platforms get less and less populated, until the end is very hard
+    //randomly generated every time
+    const FRAME_RATE = 60
+    var player = new Player(GAME_WIDTH/2, GAME_HEIGHT/2, 15, 15, "blue", 0.5);
+    var Game = StartGame(ctx, GAME_WIDTH, GAME_HEIGHT, platforms, player, FRAME_RATE, 0);
 
     //---------------------------------
     //Level Construction
-    for (let i = 0; i < 8; i++) {
-        Game.platforms[i] = new Platform(100*i + 50, 550, 50, 5, "green", "normal");
-    }
-    for (let i = 8; i < 20; i++) {
-        Game.platforms[i] = new Platform(50 + 50*(i-8), 550 - 50*(i-8), 50, 5, "green", "normal");
-    }
+    // for (let i = 0; i < 8; i++) {
+    //     Game.platforms[i] = new Platform(100*i + 50, 550, 50, 5, "green", "normal");
+    // }
+    // for (let i = 8; i < 20; i++) {
+    //     Game.platforms[i] = new Platform(50 + 50*(i-8), 550 - 50*(i-8), 50, 5, "green", "normal");
+    // }
 
-    Game.platforms[20] = new Platform(300, 200, 50, 5, "gray", "hard")
-    Game.platforms[21] = new Platform(250, 250, 50, 5, "purple", "sticky")
-    Game.platforms[22] = new Platform(200, 300, 50, 5, "blue", "bouncy")
+    // Game.platforms[20] = new Platform(300, 200, 50, 5, "gray", "hard");
+    // Game.platforms[21] = new Platform(250, 250, 50, 5, "purple", "sticky");
+    // Game.platforms[22] = new Platform(200, 300, 50, 5, "blue", "bouncy");
+    Game.populatePlatforms();
+    console.log(Game.platforms)
     //End of level construction
     //----------------------------------
 
     //start gameLoop
-    setInterval(Game.updateEverything, 1000 / 60); // 60 FPS
+    intervalID = setInterval(Game.updateEverything, 1000 / Game.FRAME_RATE); // 60 FPS
 }
 
 //x, y, width, height, color

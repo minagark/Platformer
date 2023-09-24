@@ -13,14 +13,6 @@ class Entity {
         let distX = other.x - this.x;
         let distY = other.y - this.y;
 
-        // .____
-        // |   |
-        // |   |
-        // |___|
-        //      .____________
-        //      |           |
-        //      |___________|
-
         if (distY > 0 && distY <= this.height && distX > -other.width && distX < this.width) {
             collides = "bottom"
         }
