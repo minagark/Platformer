@@ -11,14 +11,10 @@ class Player extends Entity {
         this.pressingUp = false;
         this.pressingDown = false;
         this.onGround = false;
-        this.jump_height = 8
+        this.jump_height = jump_height
     }
 
     update = function() {
         
     }
 }
-
-//if I make all of the update stuff in this player class, then any new features I
-//want to add to the update function have be in this one too. And I have to pass in
-//all the required information like Platforms, Enemies, and other entities

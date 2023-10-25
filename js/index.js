@@ -17,6 +17,9 @@ const StartGame = function(ctx, WIDTH, HEIGHT, platforms, player, FRAME_RATE, y_
         ctx.fillRect(0, 0, WIDTH, HEIGHT);
         ctx.fillStyle = tempColor;
         Game.y_level = Game.player.y - 300;
+
+        Game.platforms[Game.platforms.length - 1].y -= 0.2
+
         //update and draw the player, and draw each platform
         for (var i = 0; i < Game.platforms.length; i += 1) {
             Game.drawEntity(platforms[i], Game.y_level);
@@ -78,6 +81,11 @@ const StartGame = function(ctx, WIDTH, HEIGHT, platforms, player, FRAME_RATE, y_
         
         for (key in platforms) {
             if (p.collisionType(platforms[key]) == "bottom") {
+
+                if (platforms[key].type == "lava") {
+                    Game.lose()
+                }
+
                 p.onGround = true;
                 if (p.vy > 0) { 
                     p.y = platforms[key].y - p.height; 
@@ -146,6 +154,12 @@ const StartGame = function(ctx, WIDTH, HEIGHT, platforms, player, FRAME_RATE, y_
         Game.platforms.push(new Platform(x, y, width, height, color, type));
     }
 
+    Game.lose = function() {
+        clearInterval(intervalID)
+        ctx.fillStyle = "black"
+        ctx.fillRect(0, 0, 800, 600)
+    }
+
     return Game;
 }
 
@@ -159,7 +173,7 @@ window.onload = function() {
     //after each screen (600 pixels), the platforms get less and less populated, until the end is very hard
     //randomly generated every time
     const FRAME_RATE = 60
-    var player = new Player(GAME_WIDTH/2, GAME_HEIGHT/2, 15, 15, "blue", 0.5);
+    var player = new Player(GAME_WIDTH/2, GAME_HEIGHT/2, 15, 15, "blue", 0.5, 8);
     var Game = StartGame(ctx, GAME_WIDTH, GAME_HEIGHT, platforms, player, FRAME_RATE, 0);
 
     //---------------------------------
@@ -175,7 +189,7 @@ window.onload = function() {
     // Game.platforms[21] = new Platform(250, 250, 50, 5, "purple", "sticky");
     // Game.platforms[22] = new Platform(200, 300, 50, 5, "blue", "bouncy");
     Game.populatePlatforms();
-    console.log(Game.platforms)
+    Game.platforms.push(new Platform(0, 600, 800, 20, "red", "lava"))
     //End of level construction
     //----------------------------------
 
