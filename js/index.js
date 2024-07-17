@@ -135,6 +135,10 @@ const StartGame = function(ctx, WIDTH, HEIGHT, platforms, player, FRAME_RATE, y_
             //slowly gets harder and harder
             vertical_density = Math.round(12 * Math.exp(-y_offset / (HEIGHT * 5))); 
             horizontal_density = Math.round(6 * Math.exp(-y_offset / (HEIGHT * 5)));
+            // vertical_density = 12;
+            // horizontal_density = 6;
+
+
             vertical_interval = HEIGHT / vertical_density;
             horizontal_interval = WIDTH / horizontal_density;
             for (let x = 0; x < WIDTH; x += horizontal_interval) {
@@ -142,6 +146,8 @@ const StartGame = function(ctx, WIDTH, HEIGHT, platforms, player, FRAME_RATE, y_
                     let i = Math.floor(Math.random() * 4)
                     color = platform_options[i][0];
                     type = platform_options[i][1];
+                    // color = "green"
+                    // type = "normal"
                     Game.createAndAddRandomPlatform(x, y - y_offset, horizontal_interval, vertical_interval, 50, 5, color, type);
                 }
             }
